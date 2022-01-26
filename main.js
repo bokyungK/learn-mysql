@@ -5,7 +5,18 @@ const qs = require('querystring');
 const template = require('./lib/template.js');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html');
+
+// db에 접속하기 위한 클라이언트 설정
 const mysql = require('mysql');
+
+const db = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'nodejs',
+  password : '111111',
+  database : 'opentutorials'
+});
+
+db.connect();
 
 const app = http.createServer(function(request,response){
   const _url = request.url;
@@ -14,17 +25,22 @@ const app = http.createServer(function(request,response){
     
   if(pathname === '/'){
     if(queryData.id === undefined){
-      fs.readdir('./data', function(error, filelist){
-        const title = 'Welcome';
-        const description = 'Hello, Node.js';
-        const list = template.list(filelist);
-        const html = template.HTML(title, list,
-          `<h2>${title}</h2>${description}`,
-          `<a href="/create">create</a>`
-        );
+      // fs.readdir('./data', function(error, filelist){
+      //   const title = 'Welcome';
+      //   const description = 'Hello, Node.js';
+      //   const list = template.list(filelist);
+      //   const html = template.HTML(title, list,
+      //     `<h2>${title}</h2>${description}`,
+      //     `<a href="/create">create</a>`
+      //   );
+      //   response.writeHead(200);
+      //   response.end(html);
+      // });
+      db.query(`SELECT * FROM topic`, (err, results) => {
+        console.log(results);
         response.writeHead(200);
-        response.end(html);
-      });
+        response.end('Success');
+      })
     } else {
       fs.readdir('./data', function(error, filelist){
         const filteredId = path.parse(queryData.id).base;
