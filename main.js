@@ -25,10 +25,10 @@ const app = http.createServer(function(request,response){
     
   if(pathname === '/'){
     if(queryData.id === undefined){
-      db.query(`SELECT * FROM topic`, (err, results) => {
+      db.query(`SELECT * FROM topic`, (error, topics) => {
         const title = 'Welcome';
         const description = 'Hello, Node.js';
-        const list = template.list(results);
+        const list = template.list(topics);
         const html = template.HTML(title, list,
           `<h2>${title}</h2>${description}`,
           `<a href="/create">create</a>`
@@ -37,28 +37,34 @@ const app = http.createServer(function(request,response){
         response.end(html);
       })
     } else {
-      fs.readdir('./data', function(error, filelist){
-        const filteredId = path.parse(queryData.id).base;
-        fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-          const title = queryData.id;
-          const sanitizedTitle = sanitizeHtml(title);
-          const sanitizedDescription = sanitizeHtml(description, {
-            allowedTags:['h1']
-          });
-          const list = template.list(filelist);
-          const html = template.HTML(sanitizedTitle, list,
-            `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-            ` <a href="/create">create</a>
-              <a href="/update?id=${sanitizedTitle}">update</a>
-              <form action="delete_process" method="post">
-                <input type="hidden" name="id" value="${sanitizedTitle}">
-                <input type="submit" value="delete">
-              </form>`
-          );
+      // 글 list 보여주기 위해서 작성한 쿼리
+      db.query(`SELECT * FROM topic`, (error, topics) => {
+        // 데이터를 받아올 수 없으면 화면에 에러를 띄움
+        if(error) {
+          throw error;
+        }
+        // title, description 가져오기 위해서 작성한 쿼리
+        db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], (error2, topic) => {
+            // 데이터를 받아올 수 없으면 화면에 에러를 띄움
+          if(error2) {
+            throw error2;
+          }
+          const title = topic[0].title;
+          const description = topic[0].description;
+          const list = template.list(topics);
+          const html = template.HTML(title, list,
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>
+             <a href="/update?id=${queryData.id}}">update</a>
+             <form action="delete_process" method="post">
+              <input type="hidden" name="id" value="${queryData.id}">
+              <input type="submit" value="delete">
+             </form>`
+          )
           response.writeHead(200);
           response.end(html);
-        });
-      });
+        })
+      })
     }
   } else if(pathname === '/create'){
       fs.readdir('./data', function(error, filelist){
