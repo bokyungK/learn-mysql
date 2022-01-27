@@ -40,7 +40,7 @@ const app = http.createServer(function(request,response){
           throw error;
         }
         // title, description 가져오기 위해서 작성한 쿼리
-        db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], (error2, topic) => {
+        db.query(`SELECT * FROM topic LEFT JOIN author ON topic.author_id=author.id WHERE topic.id=?`, [queryData.id], (error2, topic) => {
             // 데이터를 받아올 수 없으면 화면에 에러를 띄움
           if(error2) {
             throw error2;
@@ -49,7 +49,10 @@ const app = http.createServer(function(request,response){
           const description = topic[0].description;
           const list = template.list(topics);
           const html = template.HTML(title, list,
-            `<h2>${title}</h2>${description}`,
+            `<h2>${title}</h2>
+            ${description}
+            <p>by ${topic[0].name}</p>
+            `,
             `<a href="/create">create</a>
              <a href="/update?id=${queryData.id}">update</a>
              <form action="delete_process" method="post">
