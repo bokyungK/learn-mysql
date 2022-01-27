@@ -4,18 +4,14 @@ const url = require('url');
 const qs = require('querystring');
 const template = require('./lib/template.js');
 const path = require('path');
-const sanitizeHtml = require('sanitize-html');
-
 // db에 접속하기 위한 클라이언트 설정
 const mysql = require('mysql');
-
 const db = mysql.createConnection({
   host     : 'localhost',
   user     : 'nodejs',
   password : '111111',
   database : 'opentutorials'
 });
-
 db.connect();
 
 const app = http.createServer(function(request,response){
@@ -55,7 +51,7 @@ const app = http.createServer(function(request,response){
           const html = template.HTML(title, list,
             `<h2>${title}</h2>${description}`,
             `<a href="/create">create</a>
-             <a href="/update?id=${queryData.id}}">update</a>
+             <a href="/update?id=${queryData.id}">update</a>
              <form action="delete_process" method="post">
               <input type="hidden" name="id" value="${queryData.id}">
               <input type="submit" value="delete">
@@ -73,9 +69,9 @@ const app = http.createServer(function(request,response){
         const html = template.HTML(title, list,
           `
           <form action="/create_process" method="post">
-            <p><input type="text" name="title" placeholder="title"></p>
+            <p><input type="text" name="title" placeholder="create title!"></p>
             <p>
-              <textarea name="description" placeholder="description"></textarea>
+              <textarea name="description" placeholder="create description!"></textarea>
             </p>
             <p>
               <input type="submit">
@@ -89,68 +85,71 @@ const app = http.createServer(function(request,response){
       })
     } else if(pathname === '/create_process'){
       let body = '';
-      request.on('data', function(data){
+      request.on('data', data => {
         body = body + data;
       });
-      request.on('end', function(){
+      request.on('end', () => {
         const post = qs.parse(body);
-        const title = post.title;
-        const description = post.description;
-
         db.query(`
           INSERT INTO topic(title, description, created, author_id)
             VALUES(?, ?, NOW(), ?)`,
           [post.title, post.description, 1],
-          (error, topics) => {
-            if(error) {
+          (error, result) => {
+            if(error){
               throw error;
             }
-            response.writeHead(302, {Location: `/?id=${results.insertId}`});
+            response.writeHead(302, {Location: `/?id=${result.insertId}`});
             response.end();
         });
       });
     } else if(pathname === '/update'){
-      fs.readdir('./data', function(error, filelist){
-        const filteredId = path.parse(queryData.id).base;
-        fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-          const title = queryData.id;
-          const list = template.list(filelist);
+      db.query(`SELECT * FROM topic`, (error, topics) => {
+        if (error) { // 예외 처리
+          throw error;
+        }
+        db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], (error2, topic) => {
+          if (error2) {
+            throw error2;
+          }
+          const title = `Update ${topic[0].title}`;
+          const list = template.list(topics);
           const html = template.HTML(title, list,
             `
             <form action="/update_process" method="post">
-              <input type="hidden" name="id" value="${title}">
-              <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+              <input type="hidden" name="id" value="${topic[0].id}">
+              <p><input type="text" name="title" placeholder="update title!" value="${topic[0].title}"></p>
               <p>
-                <textarea name="description" placeholder="description">${description}</textarea>
+                <textarea name="description" placeholder="update description!">${topic[0].description}</textarea>
               </p>
               <p>
                 <input type="submit">
               </p>
             </form>
-            `,
-            `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+          `,
+          `<a href="/create">create</a> <a href="/update?id=${topic[0].id}">update</a>`
           );
+
           response.writeHead(200);
           response.end(html);
-        });
-      });
+        })
+      })
     } else if(pathname === '/update_process'){
       let body = '';
-      request.on('data', function(data){
+      request.on('data', data => {
           body = body + data;
       });
-      request.on('end', function(){
+      request.on('end', () => {
         const post = qs.parse(body);
-        const id = post.id;
-        const title = post.title;
-        const description = post.description;
-          fs.rename(`data/${id}`, `data/${title}`, function(error){
-            fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-              response.writeHead(302, {Location: `/?id=${title}`});
-              response.end();
-            })
-          });
-      });
+        db.query(
+          `
+          UPDATE topic SET title=?, description=?, author_id=1 WHERE id=?
+          `,
+          [post.title, post.description, post.id],
+          (error, topic) => {
+            response.writeHead(302, {Location: `/?id=${post.id}`});
+            response.end();
+        })
+      })
     } else if(pathname === '/delete_process'){
       let body = '';
       request.on('data', function(data){
