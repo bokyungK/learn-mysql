@@ -145,7 +145,7 @@ const app = http.createServer(function(request,response){
           UPDATE topic SET title=?, description=?, author_id=1 WHERE id=?
           `,
           [post.title, post.description, post.id],
-          (error, topic) => {
+          (error, result) => {
             response.writeHead(302, {Location: `/?id=${post.id}`});
             response.end();
         })
@@ -157,13 +157,14 @@ const app = http.createServer(function(request,response){
       });
       request.on('end', function(){
         const post = qs.parse(body);
-        const id = post.id;
-        const filteredId = path.parse(id).base;
-          fs.unlink(`data/${filteredId}`, function(error){
-            response.writeHead(302, {Location: `/`});
-            response.end();
-          })
-      });
+        db.query('DELETE FROM topic WHERE id=?', [post.id], (error, result) => {
+          if(error) {
+            throw error;
+          }
+          response.writeHead(302, {Location: `/`});
+          response.end();
+        }) 
+      })
     } else {
         response.writeHead(404);
         response.end('Not found');
