@@ -2,7 +2,6 @@ const http = require('http');
 const url = require('url');
 const qs = require('querystring');
 const template = require('./lib/template.js');
-// db에 접속하기 위한 클라이언트 설정
 const db = require('./lib/db.js');
 
 const app = http.createServer(function(request,response){
