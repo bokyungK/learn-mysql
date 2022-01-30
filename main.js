@@ -3,6 +3,7 @@ const url = require('url');
 const qs = require('querystring');
 const template = require('./lib/template.js');
 const db = require('./lib/db.js');
+const topic = require('./lib/topic.js');
 
 const app = http.createServer(function(request,response){
   const _url = request.url;
@@ -11,17 +12,7 @@ const app = http.createServer(function(request,response){
     
   if(pathname === '/'){
     if(queryData.id === undefined){
-      db.query(`SELECT * FROM topic`, (error, topics) => {
-        const title = 'Welcome';
-        const description = 'Hello, Node.js';
-        const list = template.list(topics);
-        const html = template.HTML(title, list,
-          `<h2>${title}</h2>${description}`,
-          `<a href="/create">create</a>`
-        );
-        response.writeHead(200);
-        response.end(html);
-      })
+      topic.home(request, response);
     } else {
       // 글 list 보여주기 위해서 작성한 쿼리
       db.query(`SELECT * FROM topic`, (error, topics) => {
