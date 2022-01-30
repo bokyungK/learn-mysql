@@ -1,18 +1,9 @@
 const http = require('http');
-const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
 const template = require('./lib/template.js');
-const path = require('path');
 // db에 접속하기 위한 클라이언트 설정
-const mysql = require('mysql');
-const db = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'nodejs',
-  password : '111111',
-  database : 'opentutorials'
-});
-db.connect();
+const db = require('./lib/db.js');
 
 const app = http.createServer(function(request,response){
   const _url = request.url;
